@@ -1,4 +1,6 @@
 TARGET  = firmware
+OUTDIR  = out
+
 CC      = sdcc
 MAKEBIN = makebin
 
@@ -11,23 +13,29 @@ CFLAGS  = -mmcs51            \
            --stack-size 64    \
            --opt-code-size
 
-PORT      = COM5
-FLASHTOOL = py -3 cc_debugger.py
+SRCS = main.c uart.c
+OBJS = $(addprefix $(OUTDIR)/,$(SRCS:.c=.rel))
 
-.PHONY: all flash clean
+.PHONY: all clean
 
-all: $(TARGET).bin
-	@echo "Size: $$(wc -c < $(TARGET).bin) bytes"
+all: $(OUTDIR)/$(TARGET).bin
+	@echo "Size: $$(wc -c < $(OUTDIR)/$(TARGET).bin) bytes"
 
-$(TARGET).ihx: main.c
-	$(CC) $(CFLAGS) main.c -o $(TARGET).ihx
+# Create output directory if not exists
+$(OUTDIR):
+	mkdir -p $(OUTDIR)
 
-$(TARGET).bin: $(TARGET).ihx
-	$(MAKEBIN) -p $(TARGET).ihx $(TARGET).bin
+# Compile .c -> out/*.rel
+$(OUTDIR)/%.rel: %.c | $(OUTDIR)
+	$(CC) $(CFLAGS) -c $< -o $@
 
-flash: $(TARGET).bin
-	$(FLASHTOOL) -p $(PORT) erase
-	$(FLASHTOOL) -p $(PORT) write $(TARGET).bin
+# Link to .ihx inside out/
+$(OUTDIR)/$(TARGET).ihx: $(OBJS)
+	$(CC) $(CFLAGS) $(OBJS) -o $@
+
+# Convert to .bin inside out/
+$(OUTDIR)/$(TARGET).bin: $(OUTDIR)/$(TARGET).ihx
+	$(MAKEBIN) -p $< $@
 
 clean:
-	rm -f *.asm *.lst *.rel *.rst *.sym *.map *.mem *.lnk *.ihx *.bin
+	rm -rf $(OUTDIR)
