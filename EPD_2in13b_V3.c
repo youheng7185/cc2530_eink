@@ -29,7 +29,10 @@
 #
 ******************************************************************************/
 #include "EPD_2in13b_V3.h"
+#include "spi.h"
 #include "Debug.h"
+#include "hal_delay.h"
+#include "epd_busy.h"
 
 /******************************************************************************
 function :	Software reset
@@ -37,13 +40,16 @@ parameter:
 ******************************************************************************/
 static void EPD_2IN13B_V3_Reset(void)
 {
-    DEV_Digital_Write(EPD_CS_PIN, 1);
+    SPI_CS_HIGH();
+    // DEV_Digital_Write(EPD_CS_PIN, 1);
     
-    DEV_Digital_Write(EPD_RST_PIN, 1);
+    SPI_RST_HIGH();
+    // DEV_Digital_Write(EPD_RST_PIN, 1);
     DEV_Delay_ms(100);
-    DEV_Digital_Write(EPD_RST_PIN, 0);
+    SPI_RST_LOW();
+    // DEV_Digital_Write(EPD_RST_PIN, 0);
     DEV_Delay_ms(2);
-    DEV_Digital_Write(EPD_RST_PIN, 1);
+    SPI_RST_HIGH();
     DEV_Delay_ms(10);
 }
 
@@ -55,10 +61,11 @@ parameter:
 static void EPD_2IN13B_V3_SendCommand(UBYTE Reg)
 {
     
-    DEV_Digital_Write(EPD_DC_PIN, 0);
-    DEV_Digital_Write(EPD_CS_PIN, 0);
+    // DEV_Digital_Write(EPD_DC_PIN, 0);
+    SPI_DC_LOW();
+    SPI_CS_LOW();
     DEV_SPI_WriteByte(Reg);
-    DEV_Digital_Write(EPD_CS_PIN, 1);
+    SPI_CS_HIGH();
 }
 
 /******************************************************************************
@@ -68,10 +75,11 @@ parameter:
 ******************************************************************************/
 static void EPD_2IN13B_V3_SendData(UBYTE Data)
 {
-    DEV_Digital_Write(EPD_DC_PIN, 1);
-    DEV_Digital_Write(EPD_CS_PIN, 0);
+    // DEV_Digital_Write(EPD_DC_PIN, 1);
+    SPI_DC_HIGH();
+    SPI_CS_LOW();
     DEV_SPI_WriteByte(Data);
-    DEV_Digital_Write(EPD_CS_PIN, 1);
+    SPI_CS_HIGH();
 }
 
 /******************************************************************************
@@ -84,7 +92,7 @@ void EPD_2IN13B_V3_ReadBusy(void)
     Debug("e-Paper busy\r\n");
     do{
         EPD_2IN13B_V3_SendCommand(0x71);
-        busy = DEV_Digital_Read(EPD_BUSY_PIN);
+        busy = EPD_Busy();
         busy =!(busy & 0x01);
     }while(busy);
     Debug("e-Paper busy release\r\n");

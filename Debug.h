@@ -14,11 +14,8 @@
 #ifndef __DEBUG_H
 #define __DEBUG_H
 
-#define DEBUG 1
-#if DEBUG
-	#define Debug(__info,...) printf("Debug: " __info,##__VA_ARGS__)
-#else
-	#define Debug(__info,...)  
-#endif
+#include "uart.h"
+
+#define Debug(__info,...) uart_printf("Debug: " __info,##__VA_ARGS__)
 
 #endif

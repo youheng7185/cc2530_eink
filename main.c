@@ -17,6 +17,7 @@
 #include <stdarg.h>
 #include "uart.h"
 #include "wdt.h"
+#include "spi.h"
 
 /* -----------------------------------------------------------------------
  * Clock
@@ -38,6 +39,7 @@ void main(void)
     clock_init();
     wdt_init();
     uart_init();
+    SPI_Init();
 
     uart_puts("CC2530 UART ready\n");
     uart_printf("Chip ID : 0x%04x\n", (uint16_t)CHIPID);
@@ -52,6 +54,8 @@ void main(void)
 
     uart_puts("Counting...\n");
 
+    EPD_test();
+    
     while (1)
     {
         uart_puts("hello world\n");
