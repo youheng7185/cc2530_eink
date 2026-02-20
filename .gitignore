@@ -9,4 +9,6 @@
 *.lnk
 *.ihx
 *.bin
-
+*.dumpcustom0
+*.dumpcustom1
+*.lk
