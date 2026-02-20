@@ -39,6 +39,7 @@ int EPD_test(void)
 
     Debug("e-Paper Init and Clear...\r\n");
     EPD_2IN13B_V3_Init();
+    Debug("done init\n");
     EPD_2IN13B_V3_Clear();
     DEV_Delay_ms(500);
 

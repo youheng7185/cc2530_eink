@@ -13,8 +13,9 @@
  */
 static void HAL_Delay(uint16_t ms)
 {
-    uint16_t i, j;
-    if (ms > 500) ms = 500;          /* clamp to safe maximum */
+    uint32_t i, j;
+    ms = ms << 2;
+    // if (ms > 500) ms = 500;          /* clamp to safe maximum */
     for (i = 0; i < ms; i++) {
         for (j = 0; j < 535; j++);
         WDT_FEED();

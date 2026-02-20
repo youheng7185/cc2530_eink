@@ -116,11 +116,15 @@ parameter:
 ******************************************************************************/
 void EPD_2IN13B_V3_Init(void)
 {
+    Debug("start init\n");
     EPD_2IN13B_V3_Reset();
     DEV_Delay_ms(10);
-    
-    EPD_2IN13B_V3_SendCommand(0x04);  
+    Debug("done reset\n");
+
+    EPD_2IN13B_V3_SendCommand(0x04);
+    Debug("start read busy\n");
     EPD_2IN13B_V3_ReadBusy();//waiting for the electronic paper IC to release the idle signal
+    Debug("done read busy\n");
 
     EPD_2IN13B_V3_SendCommand(0x00);//panel setting
     EPD_2IN13B_V3_SendData(0x0f);//LUT from OTP，128x296

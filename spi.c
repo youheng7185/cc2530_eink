@@ -61,6 +61,19 @@ void SPI_Init(void)
     /* P0_3, P0_5 as output */
     P0DIR  |= (1<<3) | (1<<5);
 
+    /* DC pin — P0_2, GPIO output */
+    P0SEL &= ~(1<<2);   /* GPIO, not peripheral */
+    P0DIR |=  (1<<2);   /* output */
+    P0_2   =   1;       /* default high */
+
+    P2SEL &= ~(1<<7);  // PRI2P1
+    P2SEL &= ~(1<<6);  // PRI2P0
+
+    /* RST pin — P1_1, GPIO output */
+    P1SEL &= ~(1<<1);   /* GPIO, not peripheral */
+    P1DIR |=  (1<<1);   /* output */
+    P1_1   =   1;       /* default high */
+
     /* --- USART0 SPI mode ---
      * U0CSR:
      *   bit7 = MODE   0=SPI, 1=UART  → 0
@@ -99,9 +112,20 @@ void SPI_Init(void)
  * TX_BYTE flag is bit1 of U0CSR — set when byte has been shifted out.
  * Must clear it manually before next transfer.
  * ----------------------------------------------------------------------- */
+// void DEV_SPI_WriteByte(uint8_t value)
+// {
+//     U0CSR &= ~0x02;          /* clear TX_BYTE flag before write */
+//     U0DBUF  = value;         /* load byte → starts transmission */
+//     while (!(U0CSR & 0x02)); /* wait until TX_BYTE set (byte shifted out) */
+// }
+
 void DEV_SPI_WriteByte(uint8_t value)
 {
-    U0CSR &= ~0x02;          /* clear TX_BYTE flag before write */
-    U0DBUF  = value;         /* load byte → starts transmission */
-    while (!(U0CSR & 0x02)); /* wait until TX_BYTE set (byte shifted out) */
+    U0CSR &= ~0x02;          // clear TX flag
+    U0DBUF = value;          // start transfer
+
+    while (!(U0CSR & 0x02)); // wait TX done
+    //while (!(U0CSR & 0x01)); // wait RX done
+
+    (void)U0DBUF;            // dummy read to clear RX
 }
