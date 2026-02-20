@@ -13,7 +13,7 @@ CFLAGS  = -mmcs51            \
            --stack-size 64    \
            --opt-code-size
 
-SRCS = main.c uart.c
+SRCS = main.c uart.c wdt.c
 OBJS = $(addprefix $(OUTDIR)/,$(SRCS:.c=.rel))
 
 .PHONY: all clean

@@ -16,6 +16,7 @@
 #include <stdint.h>
 #include <stdarg.h>
 #include "uart.h"
+#include "wdt.h"
 
 /* -----------------------------------------------------------------------
  * Clock
@@ -25,34 +26,6 @@ static void clock_init(void)
     CLKCONCMD = 0x00;           /* 32 MHz XOSC, no divider */
     while (CLKCONSTA & 0x40);  /* wait until stable */
 }
-
-/* -----------------------------------------------------------------------
- * Watchdog
- *
- * WDCTL bits (corrected):
- *   [7:4] = CLR   feed sequence: write 0xA0 then 0x50 to this field
- *   [3]   = EN    set-only, cannot clear once set
- *   [2]   = MODE  0=watchdog, 1=timer
- *   [1:0] = INT   interval: 00=max(~1s), 01=long, 10=medium, 11=short
- *
- * Feed sequence writes to HIGH nibble, preserving LOW nibble (EN/MODE/INT).
- * ----------------------------------------------------------------------- */
-#define WDCLP1  0xA0
-#define WDCLP2  0x50
-#define WDTIMX  0x00   /* maximum interval ~1s @ 32kHz */
-
-#define WDT_FEED()  do { WDCTL = (WDCTL & 0x0F) | WDCLP1; \
-                         WDCTL = (WDCTL & 0x0F) | WDCLP2; } while(0)
-
-static void wdt_init(void)
-{
-    /* Set maximum interval, then feed immediately.
-     * If previous firmware left watchdog running, this resets
-     * the counter and gives us a full ~1s window. */
-    WDCTL = (WDCTL & 0xF0) | WDTIMX;
-    WDT_FEED();
-}
-
 
 /* -----------------------------------------------------------------------
  * Main — test the UART
