@@ -61,7 +61,8 @@ void main(void)
     //EPD_test();
 
     EPD_Init();
-    EPD_Clear();
+    // EPD_Clear();
+    EPD_Test();
 
     while (1)
     {
