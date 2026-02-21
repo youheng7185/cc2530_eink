@@ -18,7 +18,8 @@ static void EPD_Busy_Init(void)
 /* returns 1 if busy, 0 if ready */
 static uint8_t EPD_Busy(void)
 {
-    return P1_2 ? 1 : 0;
+    //return P1_2 ? 1 : 0;
+    return P1_2 ? 0 : 1;
 }
 
 #endif /* EPD_BUSY_H */
