@@ -93,11 +93,11 @@ void EPD_Clear(void)
 {
     SendCommand(0x10);
     for (uint32_t i = 0; i < BUFFER_SIZE; i++)
-        SendData(0x00);
+        SendData(0x00); // seems like useless
 
     SendCommand(0x13);
     for (uint32_t i = 0; i < BUFFER_SIZE; i++)
-        SendData(0x00);
+        SendData(0xAA); // 0xff will show grey, 0x00 will show white
 
     EPD_Refresh();
 
@@ -110,11 +110,11 @@ void EPD_Test(void)
 {
     SendCommand(0x10);
     for (uint32_t i = 0; i < BUFFER_SIZE; i++)
-        SendData(black[i]);
+        SendData(~black[i]);
 
     SendCommand(0x13);
     for (uint32_t i = 0; i < BUFFER_SIZE; i++)
-        SendData(red[i]);
+        SendData(~red[i]);
 
     EPD_Refresh();
 
