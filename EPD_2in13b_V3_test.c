@@ -40,8 +40,12 @@ int EPD_test(void)
     Debug("e-Paper Init and Clear...\r\n");
     EPD_2IN13B_V3_Init();
     Debug("done init\n");
-    EPD_2IN13B_V3_Clear();
-    DEV_Delay_ms(500);
+
+    for (uint8_t i = 0; i < 5; i++) {
+        EPD_2IN13B_V3_Clear();
+        DEV_Delay_ms(500);
+    }
+
 
 //     //Create a new image cache named IMAGE_BW and fill it with white
 //     UBYTE *BlackImage, *RYImage; // Red or Yellow
@@ -115,6 +119,7 @@ int EPD_test(void)
 //     RYImage = NULL;
 
     // close 5V
+    EPD_2IN13B_V3_Sleep();
     Debug("close 5V, Module enters 0 power consumption ...\r\n");
     DEV_Module_Exit();
     

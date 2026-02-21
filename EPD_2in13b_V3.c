@@ -28,103 +28,137 @@
 # THE SOFTWARE.
 #
 ******************************************************************************/
+/******************************************************************************
+ * EPD_2in13b_V3.c — fixed for CC2530
+ *
+ * Key fixes vs original Waveshare code:
+ *   1. ReadBusy polarity corrected — HIGH=busy on UC8151/IL0373
+ *   2. WDT_FEED() added in busy wait — refresh takes 2-3s, WD timeout is 1s
+ *   3. Display/Clear loops use uint16_t not UWORD to avoid SDCC issues
+ *   4. Image pointers are __code or __xdata — not plain pointer (8051 spaces)
+ ******************************************************************************/
 #include "EPD_2in13b_V3.h"
 #include "spi.h"
-#include "Debug.h"
 #include "hal_delay.h"
 #include "epd_busy.h"
+#include "wdt.h"
+#include "uart.h"
 
-/******************************************************************************
-function :	Software reset
-parameter:
-******************************************************************************/
+/* -----------------------------------------------------------------------
+ * Reset
+ * ----------------------------------------------------------------------- */
 static void EPD_2IN13B_V3_Reset(void)
 {
     SPI_CS_HIGH();
-    // DEV_Digital_Write(EPD_CS_PIN, 1);
-    
-    SPI_RST_HIGH();
-    // DEV_Digital_Write(EPD_RST_PIN, 1);
-    DEV_Delay_ms(100);
-    SPI_RST_LOW();
-    // DEV_Digital_Write(EPD_RST_PIN, 0);
-    DEV_Delay_ms(2);
-    SPI_RST_HIGH();
-    DEV_Delay_ms(10);
+    SPI_RST_HIGH();  HAL_Delay(100);
+    SPI_RST_LOW();   HAL_Delay(2);
+    SPI_RST_HIGH();  HAL_Delay(10);
 }
 
-/******************************************************************************
-function :	send command
-parameter:
-     Reg : Command register
-******************************************************************************/
-static void EPD_2IN13B_V3_SendCommand(UBYTE Reg)
+/* -----------------------------------------------------------------------
+ * Send command (DC low)
+ * ----------------------------------------------------------------------- */
+static void EPD_2IN13B_V3_SendCommand(uint8_t reg)
 {
-    
-    // DEV_Digital_Write(EPD_DC_PIN, 0);
     SPI_DC_LOW();
     SPI_CS_LOW();
-    DEV_SPI_WriteByte(Reg);
+    DEV_SPI_WriteByte(reg);
     SPI_CS_HIGH();
 }
 
-/******************************************************************************
-function :	send data
-parameter:
-    Data : Write data
-******************************************************************************/
-static void EPD_2IN13B_V3_SendData(UBYTE Data)
+/* -----------------------------------------------------------------------
+ * Send data (DC high)
+ * ----------------------------------------------------------------------- */
+static void EPD_2IN13B_V3_SendData(uint8_t data)
 {
-    // DEV_Digital_Write(EPD_DC_PIN, 1);
     SPI_DC_HIGH();
     SPI_CS_LOW();
-    DEV_SPI_WriteByte(Data);
+    DEV_SPI_WriteByte(data);
     SPI_CS_HIGH();
 }
 
-/******************************************************************************
-function :	Wait until the busy_pin goes LOW
-parameter:
-******************************************************************************/
+/* -----------------------------------------------------------------------
+ * Wait until BUSY pin goes LOW (ready)
+ *
+ * UC8151/IL0373: HIGH = busy, LOW = ready
+ *
+ * Original Waveshare code had this inverted:
+ *   busy = !(busy & 0x01)  → was waiting while LOW, exiting when HIGH — WRONG
+ *
+ * Fixed: wait while EPD_Busy() returns 1 (HIGH = busy)
+ *
+ * Also feeds WDT — full refresh holds BUSY high for ~2-3 seconds,
+ * which would trigger the 1s watchdog reset without feeding.
+ * ----------------------------------------------------------------------- */
 void EPD_2IN13B_V3_ReadBusy(void)
 {
-    UBYTE busy;
-    Debug("e-Paper busy\r\n");
-    do{
-        EPD_2IN13B_V3_SendCommand(0x71);
-        busy = EPD_Busy();
-        busy =!(busy & 0x01);
-    }while(busy);
-    Debug("e-Paper busy release\r\n");
-    DEV_Delay_ms(200);
+    uint16_t timeout = 0;
+    EPD_2IN13B_V3_SendCommand(0x71);
+    uart_printf("BUSY pin = %u\n", (uint16_t)EPD_Busy());
+    while (EPD_Busy()) {
+        WDT_FEED();
+        HAL_Delay(10);
+        timeout++;
+        if (timeout % 100 == 0)   /* print every 1 second */
+            uart_printf("still busy... %u00ms pin=%u\n",
+                        timeout / 100, (uint16_t)EPD_Busy());
+        if (timeout >= 1000) {     /* 10 second hard timeout */
+            uart_printf("BUSY timeout! giving up\n");
+            break;
+        }
+    }
+    uart_printf("BUSY done, pin = %u\n", (uint16_t)EPD_Busy());
+    HAL_Delay(200);
 }
 
-/******************************************************************************
-function :	Turn On Display
-parameter:
-******************************************************************************/
+/* -----------------------------------------------------------------------
+ * Turn on display (trigger refresh)
+ * ----------------------------------------------------------------------- */
 static void EPD_2IN13B_V3_TurnOnDisplay(void)
 {
-    EPD_2IN13B_V3_SendCommand(0x12);		 //DISPLAY REFRESH
-    DEV_Delay_ms(100);
+    EPD_2IN13B_V3_SendCommand(0x12);   /* display refresh */
+    HAL_Delay(100);
     EPD_2IN13B_V3_ReadBusy();
 }
 
-/******************************************************************************
-function :	Initialize the e-Paper register
-parameter:
-******************************************************************************/
+/* -----------------------------------------------------------------------
+ * Init
+ * ----------------------------------------------------------------------- */
+// both sequence also works
 void EPD_2IN13B_V3_Init(void)
 {
-    Debug("start init\n");
     EPD_2IN13B_V3_Reset();
-    DEV_Delay_ms(10);
-    Debug("done reset\n");
+    HAL_Delay(10);
 
-    EPD_2IN13B_V3_SendCommand(0x04);
-    Debug("start read busy\n");
+    // /* Booster soft start — missing from previous init, required */
+    // EPD_2IN13B_V3_SendCommand(0x06);
+    // EPD_2IN13B_V3_SendData(0x17);
+    // EPD_2IN13B_V3_SendData(0x17);
+    // EPD_2IN13B_V3_SendData(0x17);
+
+    // /* Power on */
+    // EPD_2IN13B_V3_SendCommand(0x04);
+    // EPD_2IN13B_V3_ReadBusy();
+
+    // /* Panel Setting
+    //  * 0x8F = LUT from OTP, B/W mode, scan up, shift right, booster on
+    //  * (GxEPD uses 0x8F for this exact panel GDEW0213Z16) */
+    // EPD_2IN13B_V3_SendCommand(0x00);
+    // EPD_2IN13B_V3_SendData(0x8F);
+
+    // /* VCOM and data interval — 0x37 per GxEPD reference */
+    // EPD_2IN13B_V3_SendCommand(0x50);
+    // EPD_2IN13B_V3_SendData(0x37);
+
+    // /* Resolution: 104 x 212 */
+    // EPD_2IN13B_V3_SendCommand(0x61);
+    // EPD_2IN13B_V3_SendData(0x68);
+    // EPD_2IN13B_V3_SendData(0x00);
+    // EPD_2IN13B_V3_SendData(0xD4);
+
+
+    EPD_2IN13B_V3_SendCommand(0x04);  
     EPD_2IN13B_V3_ReadBusy();//waiting for the electronic paper IC to release the idle signal
-    Debug("done read busy\n");
 
     EPD_2IN13B_V3_SendCommand(0x00);//panel setting
     EPD_2IN13B_V3_SendData(0x0f);//LUT from OTP，128x296
@@ -137,73 +171,80 @@ void EPD_2IN13B_V3_Init(void)
 
     EPD_2IN13B_V3_SendCommand(0X50);//VCOM AND DATA INTERVAL SETTING
     EPD_2IN13B_V3_SendData(0x77);//WBmode:VBDF 17|D7 VBDW 97 VBDB 57
-                                 //WBRmode:VBDF F7 VBDW 77 VBDB 37  VBDR B7;
+                                 //WBRmode:VBDF F7 VBDW 77 VBDB 37  VBDR B7;    
 }
 
-/******************************************************************************
-function :	Clear screen
-parameter:
-******************************************************************************/
+/* -----------------------------------------------------------------------
+ * Clear — all white
+ * ----------------------------------------------------------------------- */
 void EPD_2IN13B_V3_Clear(void)
 {
-    UWORD Width = (EPD_2IN13B_V3_WIDTH % 8 == 0)? (EPD_2IN13B_V3_WIDTH / 8 ): (EPD_2IN13B_V3_WIDTH / 8 + 1);
-    UWORD Height = EPD_2IN13B_V3_HEIGHT;
-    
-    //send black data
-    EPD_2IN13B_V3_SendCommand(0x10);
-    for (UWORD j = 0; j < Height; j++) {
-        for (UWORD i = 0; i < Width; i++) {
-            EPD_2IN13B_V3_SendData(0xFF);
-        }
-    }
+    uint16_t i, j;
+    uint16_t w = (EPD_2IN13B_V3_WIDTH % 8 == 0) ?
+                  EPD_2IN13B_V3_WIDTH / 8 :
+                  EPD_2IN13B_V3_WIDTH / 8 + 1;
+    uint16_t h = EPD_2IN13B_V3_HEIGHT;
 
-    //send red data
-    EPD_2IN13B_V3_SendCommand(0x13);
-    for (UWORD j = 0; j < Height; j++) {
-        for (UWORD i = 0; i < Width; i++) {
+    /* black plane — all white (0xFF) */
+    EPD_2IN13B_V3_SendCommand(0x10);
+    for (j = 0; j < h; j++)
+        for (i = 0; i < w; i++) {
             EPD_2IN13B_V3_SendData(0xFF);
+            WDT_FEED();
         }
-    }
+
+    /* red plane — all blank (0xFF) */
+    EPD_2IN13B_V3_SendCommand(0x13);
+    for (j = 0; j < h; j++)
+        for (i = 0; i < w; i++) {
+            EPD_2IN13B_V3_SendData(0xFF);
+            WDT_FEED();
+        }
+
     EPD_2IN13B_V3_TurnOnDisplay();
 }
 
-/******************************************************************************
-function :	Sends the image buffer in RAM to e-Paper and displays
-parameter:
-******************************************************************************/
-void EPD_2IN13B_V3_Display(const UBYTE *blackimage, const UBYTE *ryimage)
+/* -----------------------------------------------------------------------
+ * Display image
+ * blackimage / ryimage must be __code or __xdata pointers
+ * ----------------------------------------------------------------------- */
+void EPD_2IN13B_V3_Display(const uint8_t *blackimage,
+                            const uint8_t *ryimage)
 {
-    UWORD Width, Height;
-    Width = (EPD_2IN13B_V3_WIDTH % 8 == 0)? (EPD_2IN13B_V3_WIDTH / 8 ): (EPD_2IN13B_V3_WIDTH / 8 + 1);
-    Height = EPD_2IN13B_V3_HEIGHT;
-    
+    uint16_t i, j;
+    uint16_t w = (EPD_2IN13B_V3_WIDTH % 8 == 0) ?
+                  EPD_2IN13B_V3_WIDTH / 8 :
+                  EPD_2IN13B_V3_WIDTH / 8 + 1;
+    uint16_t h = EPD_2IN13B_V3_HEIGHT;
+
     EPD_2IN13B_V3_SendCommand(0x10);
-    for (UWORD j = 0; j < Height; j++) {
-        for (UWORD i = 0; i < Width; i++) {
-            EPD_2IN13B_V3_SendData(blackimage[i + j * Width]);
+    for (j = 0; j < h; j++)
+        for (i = 0; i < w; i++) {
+            EPD_2IN13B_V3_SendData(blackimage[i + j * w]);
+            WDT_FEED();
         }
-    }
-    
+
     EPD_2IN13B_V3_SendCommand(0x13);
-    for (UWORD j = 0; j < Height; j++) {
-        for (UWORD i = 0; i < Width; i++) {
-            EPD_2IN13B_V3_SendData(ryimage[i + j * Width]);
+    for (j = 0; j < h; j++)
+        for (i = 0; i < w; i++) {
+            EPD_2IN13B_V3_SendData(ryimage[i + j * w]);
+            WDT_FEED();
         }
-    }
+
     EPD_2IN13B_V3_TurnOnDisplay();
 }
 
-/******************************************************************************
-function :	Enter sleep mode
-parameter:
-******************************************************************************/
+/* -----------------------------------------------------------------------
+ * Sleep
+ * ----------------------------------------------------------------------- */
 void EPD_2IN13B_V3_Sleep(void)
 {
-    EPD_2IN13B_V3_SendCommand(0X50);
-    EPD_2IN13B_V3_SendData(0xf7);	
+    EPD_2IN13B_V3_SendCommand(0x50);
+    EPD_2IN13B_V3_SendData(0xF7);
 
-    EPD_2IN13B_V3_SendCommand(0X02);  	//power off
-    EPD_2IN13B_V3_ReadBusy();          //waiting for the electronic paper IC to release the idle signal
-    EPD_2IN13B_V3_SendCommand(0X07);  	//deep sleep
+    EPD_2IN13B_V3_SendCommand(0x02);   /* power off */
+    EPD_2IN13B_V3_ReadBusy();
+
+    EPD_2IN13B_V3_SendCommand(0x07);   /* deep sleep */
     EPD_2IN13B_V3_SendData(0xA5);
 }
