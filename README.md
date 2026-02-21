@@ -124,3 +124,7 @@ UART is using USART1 Alt. 2, SPI is using USART0 as SPI, got these value with mu
 * Found a exact same model eink display init code (https://github.com/kristianlm/atmega328-eink-heltec), but its weird as my display seems like a black and white only. Writing framebuffer after sending 0x13 command works, the 0x10 command don't do anything.
 * The display seems like it's degraded, the contrast ratio is bad.
 * Rpi pico is used as usb to uart converter, the esp32s3 is running the CCLib firmware and act as debugger without debugging features, only flashing.
+
+## Image
+
+![image](https://github.com/youheng7185/cc2530_eink/blob/main/eink.jpg)
