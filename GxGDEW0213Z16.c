@@ -65,39 +65,42 @@ void EPD_Init(void)
 
     // Panel setting
     SendCommand(0x00);
-    SendData(0x8F);
-
-    // VCOM and data interval
-    SendCommand(0x50);
-    SendData(0x37);
-
+    SendData(0x0F);
+    
     // Resolution setting (104 x 212)
     SendCommand(0x61);
     SendData(0x68);   // 104
     SendData(0x00);
     SendData(0xD4);   // 212
+
+    // VCOM and data interval
+    SendCommand(0x50);
+    SendData(0x77);
+
+}
+
+void EPD_Refresh(void) {
+    HAL_Delay(100);
+    SendCommand(0x12);
+    HAL_Delay(100);
+    WaitBusy();
 }
 
 #define BUFFER_SIZE 2756 // 104*212 / 8
 
 void EPD_Clear(void)
 {
-    EPD_Init();   // wake + init
-
     SendCommand(0x10);
-    for (uint32_t i = 0; i < BUFFER_SIZE * 2; i++)
+    for (uint32_t i = 0; i < BUFFER_SIZE; i++)
         SendData(0xFF);
 
     SendCommand(0x13);
     for (uint32_t i = 0; i < BUFFER_SIZE; i++)
         SendData(0xFF);
 
-    SendCommand(0x12);   // display refresh
-    WaitBusy();
+    EPD_Refresh();
 
     // Sleep
     SendCommand(0x02);
     WaitBusy();
-    SendCommand(0x07);
-    SendData(0xA5);
 }
