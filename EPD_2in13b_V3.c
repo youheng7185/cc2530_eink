@@ -157,21 +157,23 @@ void EPD_2IN13B_V3_Init(void)
     // EPD_2IN13B_V3_SendData(0xD4);
 
 
-    EPD_2IN13B_V3_SendCommand(0x04);  
-    EPD_2IN13B_V3_ReadBusy();//waiting for the electronic paper IC to release the idle signal
+    // EPD_2IN13B_V3_SendCommand(0x04);  
+    // EPD_2IN13B_V3_ReadBusy();//waiting for the electronic paper IC to release the idle signal
 
-    EPD_2IN13B_V3_SendCommand(0x00);//panel setting
-    EPD_2IN13B_V3_SendData(0x0f);//LUT from OTP，128x296
-    EPD_2IN13B_V3_SendData(0x89);//Temperature sensor, boost and other related timing settings
+    // EPD_2IN13B_V3_SendCommand(0x00);//panel setting
+    // EPD_2IN13B_V3_SendData(0x0f);//LUT from OTP，128x296
+    // EPD_2IN13B_V3_SendData(0x89);//Temperature sensor, boost and other related timing settings
 
-    EPD_2IN13B_V3_SendCommand(0x61);//resolution setting
-    EPD_2IN13B_V3_SendData (0x68);
-    EPD_2IN13B_V3_SendData (0x00);
-    EPD_2IN13B_V3_SendData (0xD4);
+    // EPD_2IN13B_V3_SendCommand(0x61);//resolution setting
+    // EPD_2IN13B_V3_SendData (0x68);
+    // EPD_2IN13B_V3_SendData (0x00);
+    // EPD_2IN13B_V3_SendData (0xD4);
 
-    EPD_2IN13B_V3_SendCommand(0X50);//VCOM AND DATA INTERVAL SETTING
-    EPD_2IN13B_V3_SendData(0x77);//WBmode:VBDF 17|D7 VBDW 97 VBDB 57
-                                 //WBRmode:VBDF F7 VBDW 77 VBDB 37  VBDR B7;    
+    // EPD_2IN13B_V3_SendCommand(0X50);//VCOM AND DATA INTERVAL SETTING
+    // EPD_2IN13B_V3_SendData(0x77);//WBmode:VBDF 17|D7 VBDW 97 VBDB 57
+    //                              //WBRmode:VBDF F7 VBDW 77 VBDB 37  VBDR B7;    
+
+
 }
 
 /* -----------------------------------------------------------------------

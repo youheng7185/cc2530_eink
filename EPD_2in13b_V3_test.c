@@ -41,10 +41,8 @@ int EPD_test(void)
     EPD_2IN13B_V3_Init();
     Debug("done init\n");
 
-    for (uint8_t i = 0; i < 5; i++) {
-        EPD_2IN13B_V3_Clear();
-        DEV_Delay_ms(500);
-    }
+    EPD_2IN13B_V3_Clear();
+    DEV_Delay_ms(500);
 
 
 //     //Create a new image cache named IMAGE_BW and fill it with white

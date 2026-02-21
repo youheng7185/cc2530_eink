@@ -19,6 +19,7 @@
 #include "wdt.h"
 #include "spi.h"
 #include "epd_busy.h"
+#include "GxGDEW0213Z16.h"
 
 /* -----------------------------------------------------------------------
  * Clock
@@ -57,7 +58,10 @@ void main(void)
 
     uart_puts("Counting...\n");
 
-    EPD_test();
+    //EPD_test();
+
+    EPD_Init();
+    EPD_Clear();
 
     while (1)
     {
