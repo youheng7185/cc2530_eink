@@ -48,8 +48,9 @@ void SPI_Init(void)
      * PERCFG bit0: U0CFG  0=Alt.1, 1=Alt.2
      * Alt.2 routes USART0 to: P0_3=TX(MOSI), P0_4=RX(MISO), P0_5=SCK
      */
-    PERCFG |= 0x01;                  /* USART0 → Alt.2 */
-
+    //PERCFG |= 0x01;                  /* USART0 → Alt.2 */
+    PERCFG &= ~0x01;
+    
     /* P0_3 (MOSI) and P0_5 (CLK) as peripheral function */
     P0SEL  |= (1<<3) | (1<<5);
 
