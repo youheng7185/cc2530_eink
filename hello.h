@@ -7,6 +7,6 @@
 #define BUFFER_SIZE 2756
 
 extern const __xdata uint8_t black[BUFFER_SIZE];
-extern const __xdata uint8_t red[BUFFER_SIZE];
+extern const __xdata uint8_t test1[BUFFER_SIZE];
 
 #endif

@@ -114,7 +114,13 @@ void EPD_Test(void)
 
     SendCommand(0x13);
     for (uint32_t i = 0; i < BUFFER_SIZE; i++)
-        SendData(~black[i]);
+        SendData(0x00);
+
+    EPD_Refresh();
+
+    SendCommand(0x13);
+    for (uint32_t i = 0; i < BUFFER_SIZE; i++)
+        SendData(~test1[i]);
 
     EPD_Refresh();
 
