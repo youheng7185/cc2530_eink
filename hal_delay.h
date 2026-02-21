@@ -14,7 +14,7 @@
 static void HAL_Delay(uint16_t ms)
 {
     uint32_t i, j;
-    ms = ms << 2;
+    ms = ms << 5;
     // if (ms > 500) ms = 500;          /* clamp to safe maximum */
     for (i = 0; i < ms; i++) {
         for (j = 0; j < 535; j++);

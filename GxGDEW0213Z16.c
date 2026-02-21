@@ -4,6 +4,7 @@
 #include "epd_busy.h"
 #include "wdt.h"
 #include "uart.h"
+#include "hello.h"
 
 static void SendCommand(uint8_t reg)
 {
@@ -92,11 +93,28 @@ void EPD_Clear(void)
 {
     SendCommand(0x10);
     for (uint32_t i = 0; i < BUFFER_SIZE; i++)
-        SendData(0xFF);
+        SendData(0x00);
 
     SendCommand(0x13);
     for (uint32_t i = 0; i < BUFFER_SIZE; i++)
-        SendData(0xFF);
+        SendData(0x00);
+
+    EPD_Refresh();
+
+    // Sleep
+    SendCommand(0x02);
+    WaitBusy();
+}
+
+void EPD_Test(void) 
+{
+    SendCommand(0x10);
+    for (uint32_t i = 0; i < BUFFER_SIZE; i++)
+        SendData(black[i]);
+
+    SendCommand(0x13);
+    for (uint32_t i = 0; i < BUFFER_SIZE; i++)
+        SendData(red[i]);
 
     EPD_Refresh();
 

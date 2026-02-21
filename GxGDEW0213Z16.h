@@ -3,5 +3,6 @@
 
 void EPD_Init(void);
 void EPD_Clear(void);
+void EPD_Test(void);
 
 #endif
