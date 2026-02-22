@@ -96,7 +96,7 @@ void SPI_Init(void)
     U0GCR = (0<<7) |   /* CPOL=0  */
             (0<<6) |   /* CPHA=0  */
             (1<<5) |   /* MSB first */
-            12;        /* BAUD_E=12 → ~500kHz @ 32MHz */
+            16;        // baud_e = 16, try 2mhz spi clock
 
     /* BAUD_M=0 (mantissa), combined with BAUD_E gives final rate */
     U0BAUD = 0;
