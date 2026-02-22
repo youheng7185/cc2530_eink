@@ -120,7 +120,7 @@ void EPD_Test(void)
 
     SendCommand(0x13);
     for (uint32_t i = 0; i < BUFFER_SIZE; i++)
-        SendData(~test1[i]);
+        SendData(~lty[i]);
 
     EPD_Refresh();
 
