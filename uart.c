@@ -25,9 +25,9 @@ void uart_init(void)
     U1CSR  = 0x80;               /* UART mode (bit7=1), receiver disabled for now */
     U1UCR  = 0x02;               /* 8N1, no flow control, high stop bit */
 
-    /* Baud rate: 115200 @ 32 MHz */
+    /* Baud rate: 921600 @ 32 MHz */
     U1BAUD = 216;                /* BAUD_M */
-    U1GCR  = 11;                 /* BAUD_E (bits[4:0]), MSB first = 0 (LSB first for UART) */
+    U1GCR  = 14;                 /* BAUD_E (bits[4:0]), MSB first = 0 (LSB first for UART) */
 
     /* Enable receiver */
     U1CSR |= 0x40;
