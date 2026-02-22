@@ -29,20 +29,22 @@ void WaitBusy(void)
 {
     uint16_t timeout = 0;
     SendCommand(0x71);
-    uart_printf("BUSY pin = %u\n", (uint16_t)EPD_Busy());
+    // uart_printf("BUSY pin = %u\n", (uint16_t)EPD_Busy());
     while (EPD_Busy()) {
         WDT_FEED();
         HAL_Delay(10);
-        timeout++;
-        if (timeout % 100 == 0)   /* print every 1 second */
-            uart_printf("still busy... %u00ms pin=%u\n",
-                        timeout / 100, (uint16_t)EPD_Busy());
-        if (timeout >= 1000) {     /* 10 second hard timeout */
-            uart_printf("BUSY timeout! giving up\n");
-            break;
-        }
+        // timeout++;
+        // if (timeout % 100 == 0)   /* print every 1 second */
+        //     uart_printf("still busy... %u00ms pin=%u\n",
+        //                 timeout / 100, (uint16_t)EPD_Busy());
+        // if (timeout >= 1000) {     /* 10 second hard timeout */
+        //     uart_printf("BUSY timeout! giving up\n");
+        //     break;
+        // }
+
+        if (timeout >= 1000) break;
     }
-    uart_printf("BUSY done, pin = %u\n", (uint16_t)EPD_Busy());
+    // uart_printf("BUSY done, pin = %u\n", (uint16_t)EPD_Busy());
     HAL_Delay(200);
 }
 

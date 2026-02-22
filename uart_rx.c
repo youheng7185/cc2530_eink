@@ -31,9 +31,9 @@ void uart_read_bytes(__xdata uint8_t *buf, uint16_t len)
 /* -----------------------------------------------------------------------
  * Protocol commands
  * ----------------------------------------------------------------------- */
-#define CMD_WRITE_SCREEN 0x13
-#define CMD_CLEAR_SCREEN 0x31
-
+#define CMD_WRITE_SCREEN 0x57
+#define CMD_CLEAR_SCREEN 0x43
+#define CMD_SEND_BUFFER  0x69
 /* -----------------------------------------------------------------------
  * Wait for a command byte, then receive the framebuffer if needed
  * ----------------------------------------------------------------------- */
@@ -43,17 +43,24 @@ void uart_process_command(void)
 
     switch(cmd)
     {
+        case CMD_SEND_BUFFER:
+            uart_putc(0x06);
+            uart_read_bytes(framebuffer, FRAMEBUFFER_SIZE);
+            uart_putc(0x06);
+            break;
+
         case CMD_WRITE_SCREEN:
             /* Receive full framebuffer */
-            uart_read_bytes(framebuffer, FRAMEBUFFER_SIZE);
-            uart_printf("Received framebuffer (%u bytes)\n", FRAMEBUFFER_SIZE);
+            uart_putc(0x06);
             EPD_SendFrame(framebuffer);
+            uart_putc(0x06);
             break;
 
         case CMD_CLEAR_SCREEN:
             // clear screen
+            uart_putc(0x06);
             EPD_Clear();
-            uart_printf("Framebuffer cleared\n");
+            uart_putc(0x06);
             break;
 
         default:
