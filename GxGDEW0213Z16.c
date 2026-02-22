@@ -91,13 +91,11 @@ void EPD_Refresh(void) {
 
 void EPD_Clear(void)
 {
-    SendCommand(0x10);
-    for (uint32_t i = 0; i < BUFFER_SIZE; i++)
-        SendData(0x00); // seems like useless
+    EPD_Init();
 
     SendCommand(0x13);
     for (uint32_t i = 0; i < BUFFER_SIZE; i++)
-        SendData(0xAA); // 0xff will show grey, 0x00 will show white
+        SendData(0x00); // 0xff will show grey, 0x00 will show white
 
     EPD_Refresh();
 
@@ -120,11 +118,24 @@ void EPD_Test(void)
 
     SendCommand(0x13);
     for (uint32_t i = 0; i < BUFFER_SIZE; i++)
-        SendData(~lty[i]);
+        SendData(~test1[i]);
 
     EPD_Refresh();
 
     // Sleep
+    SendCommand(0x02);
+    WaitBusy();
+}
+
+void EPD_SendFrame(uint8_t *framebuffer)
+{
+    EPD_Init(); // hwreset after sleep
+
+    SendCommand(0x13);
+    for (uint32_t i = 0; i < BUFFER_SIZE; i++)
+        SendData(~framebuffer[i]);
+
+    EPD_Refresh();
     SendCommand(0x02);
     WaitBusy();
 }

@@ -20,6 +20,7 @@
 #include "spi.h"
 #include "epd_busy.h"
 #include "GxGDEW0213Z16.h"
+#include "uart_rx.h"
 
 /* -----------------------------------------------------------------------
  * Clock
@@ -59,19 +60,23 @@ void main(void)
     uart_puts("Counting...\n");
 
     EPD_Init();
-    EPD_Test();
+    // EPD_Test();
+
+    // EPD_Clear();
 
     while (1)
     {
-        uart_puts("hello world\n");
-        counter++;
+        uart_process_command();
 
-        /* print SP every 16 iters to watch for stack creep */
-        if ((counter & 0x0F) == 0)
-            uart_printf("[%u] SP=0x%02x headroom=%u\n",
-                        counter, (uint16_t)SP, (uint16_t)(0xFF - SP));
+        // uart_puts("hello world\n");
+        // counter++;
 
-        WDT_FEED();
+        // /* print SP every 16 iters to watch for stack creep */
+        // if ((counter & 0x0F) == 0)
+        //     uart_printf("[%u] SP=0x%02x headroom=%u\n",
+        //                 counter, (uint16_t)SP, (uint16_t)(0xFF - SP));
+
+        // WDT_FEED();
 
         for (i = 0; i < 200; i++) {
             uint16_t j;
